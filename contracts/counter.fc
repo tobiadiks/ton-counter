@@ -1,0 +1,41 @@
+#include "imports/stdlib.fc";
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    ;; the exception throws an error code of 35 if the length of the mesage body bits is not up to 32 bits
+    throw_if(35, in_msg_body.slice_bits() < 32);
+
+    int n = in_msg_body~load_uint(32);
+    ;; load_uint is a function from the standard FunC library. It reads and returns an unsigned integer of a specified size from the slice.
+
+    slice ds = get_data().begin_parse();
+;; Namely: get_data - retrieves a cell from register c4. begin_parse - converts a cell into a slice.
+
+
+;; Also, let's read the 64-bit number from this slice into the numeric variable total for summation according to our task. (Using the already familiar load_uint function)
+    int total = ds~load_uint(64);
+
+    total += n;
+
+;; To save the value of total in the persistent data of the contract, we need to perform four actions:
+;; Create a Builder for the future data cell
+;; Write the value to this builder
+;; Convert the builder to a cell
+;; Write the resulting cell to register c4
+
+
+;; begin_cell() - creates a Builder for the future cell store_uint() - writes the value of total end_cell() - creates a Cell from the builder set_data() - writes the cell to register c4
+    set_data(begin_cell().store_uint(total, 64).end_cell());
+}
+
+
+;; Any function in FunC follows the following pattern:
+
+;; [<forall declarator>] <return_type><function_name(<comma_separated_function_args>) <specifiers>
+
+;; The method_id specifier allows you to call a function by its name. It is mandatory for get methods.
+int get_total() method_id {
+    slice ds = get_data().begin_parse();
+    int total = ds~load_uint(64);
+
+    return total;
+}
